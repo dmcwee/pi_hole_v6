@@ -100,4 +100,13 @@ class PiHoleSensor(PiHoleEntity, SensorEntity):
             return round(value, 2)  # type: ignore[no-any-return]
             # return round(self.api.data[self.entity_description.key], 2)  # type: ignore[no-any-return]
         except TypeError:
-            return self.api.data[self.entity_description.key]  # type: ignore[no-any-return]
+            # return self.api.data[self.entity_description.key]  # type: ignore[no-any-return]
+            value = getattr(self.api, self.entity_description.key)
+            _LOGGER.debug("Value for '%s' is '%s'", self.entity_description.key, value)
+            return value  # type: ignore[arg-type]
+        except AttributeError:
+            _LOGGER.error(
+                "Pi-hole API does not support '%s' attribute",
+                self.entity_description.key,
+            )
+            return "unknown"

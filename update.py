@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+import logging
 
 from homeassistant.components.update import UpdateEntity, UpdateEntityDescription
 from homeassistant.const import CONF_NAME, EntityCategory
@@ -16,6 +17,8 @@ from .entity import PiHoleEntity
 
 # from hole import Hole
 from .v6 import HoleV6 as Hole
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -35,9 +38,15 @@ UPDATE_ENTITY_TYPES: tuple[PiHoleUpdateEntityDescription, ...] = (
         translation_key="core_update_available",
         title="Pi-hole Core",
         entity_category=EntityCategory.DIAGNOSTIC,
-        installed_version=lambda versions: versions.get("core_current"),
-        latest_version=lambda versions: versions.get("core_latest"),
-        has_update=lambda versions: versions.get("core_update"),
+        installed_version=lambda api: getattr(
+            api, "core_current"
+        ),  # versions: versions: versions.get("core_current"),
+        latest_version=lambda api: getattr(
+            api, "core_latest"
+        ),  # versions: versions.get("core_latest"),
+        has_update=lambda api: getattr(
+            api, "core_update", False
+        ),  # versions: versions.get("core_update"),
         release_base_url="https://github.com/pi-hole/pi-hole/releases/tag",
     ),
     PiHoleUpdateEntityDescription(
@@ -45,9 +54,15 @@ UPDATE_ENTITY_TYPES: tuple[PiHoleUpdateEntityDescription, ...] = (
         translation_key="web_update_available",
         title="Pi-hole Web interface",
         entity_category=EntityCategory.DIAGNOSTIC,
-        installed_version=lambda versions: versions.get("web_current"),
-        latest_version=lambda versions: versions.get("web_latest"),
-        has_update=lambda versions: versions.get("web_update"),
+        installed_version=lambda api: getattr(
+            api, "web_current"
+        ),  # versions: versions.get("web_current"),
+        latest_version=lambda api: getattr(
+            api, "web_latest"
+        ),  # versions: versions.get("web_latest"),
+        has_update=lambda api: getattr(
+            api, "web_update", False
+        ),  # versions: versions.get("web_update"),
         release_base_url="https://github.com/pi-hole/AdminLTE/releases/tag",
     ),
     PiHoleUpdateEntityDescription(
@@ -55,9 +70,15 @@ UPDATE_ENTITY_TYPES: tuple[PiHoleUpdateEntityDescription, ...] = (
         translation_key="ftl_update_available",
         title="Pi-hole FTL DNS",
         entity_category=EntityCategory.DIAGNOSTIC,
-        installed_version=lambda versions: versions.get("FTL_current"),
-        latest_version=lambda versions: versions.get("FTL_latest"),
-        has_update=lambda versions: versions.get("FTL_update"),
+        installed_version=lambda api: getattr(
+            api, "ftl_current"
+        ),  # versions: versions.get("FTL_current"),
+        latest_version=lambda api: getattr(
+            api, "ftl_latest"
+        ),  # versions: versions.get("FTL_latest"),
+        has_update=lambda api: getattr(
+            api, "ftl_update", False
+        ),  # versions: versions.get("FTL_update"),
         release_base_url="https://github.com/pi-hole/FTL/releases/tag",
     ),
 )
@@ -104,20 +125,26 @@ class PiHoleUpdateEntity(PiHoleEntity, UpdateEntity):
 
         self._attr_unique_id = f"{self._server_unique_id}/{description.key}"
         self._attr_title = description.title
+        _LOGGER.info(
+            "New PiHoleUpdateEntry Name(%s) ID(%s) Title(%s)",
+            name,
+            server_unique_id,
+            description.title,
+        )
 
     @property
     def installed_version(self) -> str | None:
         """Version installed and in use."""
         if isinstance(self.api.versions, dict):
-            return self.entity_description.installed_version(self.api.versions)
+            return self.entity_description.installed_version(self.api)
         return None
 
     @property
     def latest_version(self) -> str | None:
         """Latest version available for install."""
         if isinstance(self.api.versions, dict):
-            if self.entity_description.has_update(self.api.versions):
-                return self.entity_description.latest_version(self.api.versions)
+            if self.entity_description.has_update(self.api):
+                return self.entity_description.latest_version(self.api)
             return self.installed_version
         return None
 
