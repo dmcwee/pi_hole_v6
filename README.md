@@ -17,5 +17,5 @@ The code in the respository is a copy of the code found in the Home Assistant [`
 1. A **Pi-hole v6** integration should appear and begin to populate with data from the Pi-hole
 
 ## Issues
-- [ ] Fix the Status value reporting a Unknown
-- [ ] Fix the Switch action (maybe?)
+- [X] Fix the Status value reporting a Unknown
+- [X] Fix the Switch action - Fixed by status update
